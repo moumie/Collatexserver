@@ -23,7 +23,7 @@
       $file_content=$_POST['file_content'];
     }
     else{
-      $message="file_content not set";
+      $message="file_content not set xx ".$file_id;
       send_bad_request($message);
       return false;
     }
