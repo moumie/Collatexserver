@@ -27,31 +27,53 @@
       send_bad_request($message);
       return false;
     }
-    
-   
- 
+ //start the buffer   
  ob_start();
- //include 'latex_template.php';
- //$outputData .=ob_get_contents();
  $outputData .=$file_content;
+ 
+ //End the buffer
  ob_end_clean();
- $texFile = tempnam(sys_get_temp_dir(), 'test');
+ 
+ //Create a unique file in the doc folder
+ $texFile = tempnam('doc', 'doc');
+ 
+ //Extract the filename from the path 
  $base = basename($texFile);
+ 
+ //Add .tex extension the file filename
  rename($texFile, $texFile.".tex");
  $texFile .= ".tex";
+ 
+ //Write buffered data to the tex file
  file_put_contents($texFile,  $outputData);
+ 
+ //Change current directory
  chdir(dirname(realpath($texFile)));
+ 
+ //Conversion to pdf using xelatex
  $console = shell_exec("xelatex {$base}" );
+ 
+ //Building path
  $pdf = dirname(realpath($console))."/".$base.".pdf";
  $a=$base.".pdf";
  $teile = explode(".", $a);
  $filename= $teile[0].".tmp.pdf"; // Teil1
  $filenames=$teile[0];
+ 
+ //To be used later
  $p=$filename;
+ 
+ //Final pdf filename
  $out = explode(".", $filename);
  $out_pdf= $out[0].".pdf";
- //copy('C:\Users\soulemane\AppData\Local\Temp\\'.$p, 'E:\2015\xampp\htdocs\collatexserver\api\\'.$p);
-  copy('C:\Users\soulemane\AppData\Local\Temp\\'.$p, 'E:\2015\xampp\htdocs\collatexserver\api\pdf\\'.$out_pdf);
+ 
+ //Get current dir
+ $currentdir = getcwd();
+ 
+ //remove the suffix \doc\ at the end of the current directory
+ $currentdirpdf = rtrim($currentdir, '\doc\\');
+ //echo $currentdir;
+ copy($currentdir.'\\'.$p, $currentdirpdf.'\pdf\\'.$out_pdf);
   
   //$filename =  $file_content;
  send_convert_success($out_pdf);
