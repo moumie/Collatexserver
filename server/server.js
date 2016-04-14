@@ -11,6 +11,11 @@ var docOp = require("./models/doc");
 //list of users online
 var userOnlineList = new Object(); 
 
+//list of users online
+var roomList = new Object();
+//room counter
+var roomCounter=0;
+
 //number of users online
 var userOnline =0;
 //var dir="dir/hello.tex";
@@ -25,13 +30,31 @@ http.listen(3000);
 io.sockets.on('connection', function(socket){
     console.log('Connected to a new client');
     
-    socket.on('room', function(room) {
-        socket.join(room);
-        console.log('join room '+ room);
+    socket.on('error', function(err) {
+        //here i change options
+        console.log('Error!', err);
     });
+   
     
+    socket.on('subscribe', function(room) { 
+        console.log('joining room ', room);
+        socket.join(room); 
+        roomCounter++;
+        //Add user in the list
+        roomList[room]=room;
+        io.emit('server_roomlist',roomList);
+
+    })
+
+    socket.on('unsubscribe', function(room) {  
+        console.log('leaving room ', room);
+        socket.leave(room); 
+        //roomCounter--;
+        //remove from room list
+        delete roomList[room];
+        io.emit('server_roomlist',roomList);
+    })
     
-    var room = "abc123";
     //Increment the number of user online
     userOnline++;
     io.emit('user_online',userOnline);
@@ -45,7 +68,7 @@ io.sockets.on('connection', function(socket){
     console.log('Disconnected from a client');
     });
     
-    socket.on('client_logout',function(msg, sessionid){
+    socket.on('client_logout',function(msg, room){
         
           console.log('Logout ID' +  msg);
 
@@ -57,13 +80,12 @@ io.sockets.on('connection', function(socket){
           socket.disconnect(0);
           //update
           //socket.broadcast.to(room).emit('server_useronlinelist',userOnlineList);
-
     });
      
     //Server receives new login credentials (userEmail, userPassword) from a client 
-    socket.on('client_login',function(msg, sessionid){
+    socket.on('client_login',function(msg, room){
     
-    //receive data and sessionid
+    //receive data and room
      console.log('User email: '+msg.userEmail + "User password: "+msg.userPassword);
      
     //Returning the id of the new user to the client
@@ -81,19 +103,17 @@ io.sockets.on('connection', function(socket){
             userOnlineList[data._id]=data.userEmail;
             //Send to client:
             socket.emit('server_login',data._id);
-            socket.broadcast.to(room).emit('server_useronlinelist',userOnlineList);
+            //socket.broadcast.to(room).emit('server_useronlinelist',userOnlineList);
+            io.emit('server_useronlinelist',userOnlineList);
             console.log('User list : '+ userOnlineList);
          }else{
              
             console.log('Empty object: no match found');
             //Send to client:
             socket.emit('server_login', 'no match found');
-         }
-            
-            
+         } 
             //Send to client:
             //socket.emit('server_registration',data._id);
-
        }
     });
      
@@ -102,9 +122,9 @@ io.sockets.on('connection', function(socket){
     
     
     //Server receives new user info (userEmail, userPassword) from a client 
-    socket.on('client_register',function(msg, sessionid){
+    socket.on('client_register',function(msg, room){
     
-    //receive data and sessionid
+    //receive data and room
      console.log('User email: '+msg.userEmail + "User password: "+msg.userPassword);
      userRegister(msg.userEmail , msg.userPassword);
      
@@ -114,43 +134,35 @@ io.sockets.on('connection', function(socket){
               socket.emit('server_registration',"Error occured");
               console.log('Error 0 : '+ err);
        } else {
-          
-
-            
         if (data) {
             console.log('Index 0 : '+ data.userEmail);
             console.log('Index 1 : '+ data.userPassword);
-            console.log('Index 2 : '+ data._id);
-            
+            console.log('Index 2 : '+ data._id);            
             //Send to client:
             socket.emit('server_registration',data._id);
-         }else{
-             
+         }else{             
             console.log('Empty object: no match found');
             socket.emit('server_registration','no match found');
          }
        }
     });
-     
-    
     });
     
     //Data exchange between client and server
     //Server receives new data from a client and broadcast it to others
-    socket.on('client_character',function(msg, sessionid){
+    socket.on('client_character',function(msg, clientroom){
     
-    //receive data and sessionid
-    console.log('Data + sessionId'+msg.buffer + "--"+sessionid);
+    console.log('Client room: '+clientroom);
+    //receive data and room
+    console.log('Data'+msg.buffer);
     
-   // socket.in(room).broadcast.emit('server_character',msg.buffer);
-    socket.broadcast.to(room).emit('server_character', msg.buffer);
-    //socket.to(room).emit('server_character',msg.buffer);
-
+    socket.broadcast.to(clientroom).emit('server_character', msg.buffer);
+    // socket.emit('server_character', msg.buffer);
     });
     //Server receives new document from a client 
-    socket.on('client_doc',function(msg, sessionid){
+    socket.on('client_doc',function(msg, room){
     
-    //receive data and sessionid
+    //receive data and room
     console.log('Doc name: '+msg.name + "content: "+msg.content+ "onwer: "+msg.owner);
     checkDirectoryAndSaveFile(dir, msg.name, msg.content, msg.owner);
     
@@ -158,9 +170,9 @@ io.sockets.on('connection', function(socket){
     
     
     //Server receives new document from a client 
-    socket.on('client_getdocs',function(userid, sessionid){
+    socket.on('client_getdocs',function(userid, room){
     
-    //receive data and sessionid
+    //receive data and room
     console.log('User ID: '+userid );
     
     docOp.find({creator:userid},function(err,data){
@@ -180,10 +192,10 @@ io.sockets.on('connection', function(socket){
     });
     
     //Server receives new document from a client 
-    socket.on('client_convert',function(msg, sessionid){
+    socket.on('client_convert',function(msg, room){
     
-    //receive document name to be converted and sessionid
-    console.log('Doc name: '+msg + "sessionId: "+sessionid);
+    //receive document name to be converted and room
+    console.log('Doc name: '+msg + "room: "+room);
     var fid =msg;
     var latexFile= dir+"/"+msg;
     //load file contents
@@ -217,12 +229,22 @@ io.sockets.on('connection', function(socket){
             };
             
             io.emit('server_pdf',document);
-
     }
     });
     //checkDirectoryAndSaveFile(dir, msg.name, msg.content);
     
     });
+    
+   
+    //Server sends content of the requested document to the client
+    socket.on('client_getDocContent',function(path){
+    
+    //receive data and room
+    console.log('Requested content path: '+path);
+    
+    socket.emit('server_getDocContent', readFileContents(path));
+    });
+    
 });
 
  function checkDirectoryAndSaveFile(path,fileName, data, userpid){
@@ -250,8 +272,10 @@ function writeToFile(path, data){
 };
 
 function createNewFile(path, name, data, userpid){
-    path= path+"/"+name+".tex";
-    fs.appendFile(path, data,function(err) {
+    var doc_name = userpid+"_"+name;
+    path= path+"/"+doc_name+".tex";
+    //fs.appendFile(path, data,function(err) {
+    fs.writeFile(path, data,function(err) {
     if (err) throw err;
     else{
      //Saving the document in DB.
@@ -261,15 +285,7 @@ function createNewFile(path, name, data, userpid){
 };
 
 function readFileContents(path){
-     /*
-     fs.readFile(path, 'utf8', function(err, fileContents) {
-        if (err) throw err;
-        //console.log("!!! "+fileContents);
 
-        latexContents = fileContents;
-        });
-        */
-    //console.log("!!! "+latexContents);
   return fs.readFileSync(path,'utf8');
 };
 
