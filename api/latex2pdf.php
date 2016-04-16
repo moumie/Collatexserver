@@ -1,15 +1,13 @@
 <?php
 
-  /* 
+    /* 
      * Author: Soulemane Moumie
      * Operation: conversion
      * Description: convert latex to pdf
      * History:
      */
      
-   // $params="$_POST";
-  
-     
+    //Checking that the received variable are set
     if(isset($_POST['file_id'])) {
       $file_id=$_POST['file_id'];
     }
@@ -93,23 +91,19 @@
     }
     */
 
-
+//Data to json mapping
 function send_json_reply($data){
   echo json_encode($data);
   exit;
 }
 
+//Success error code
 function send_convert_success($message) {
   http_response_code(200);
   send_json_reply($message);
 }
-/*
-function send_convert_success() {
-  http_response_code(200);
-  send_json_reply("success");
-}
- */
 
+//Bad request error code
 function send_bad_request($message){
   http_response_code(400);
   send_json_reply($message);
