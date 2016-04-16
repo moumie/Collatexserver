@@ -1,3 +1,80 @@
+/* 
+ * Author: Soulemane Moumie
+ * Architecture:
+ *  - Node.js : Event-driven I/O server-side JavaScript environment for building 
+ *              fast and scalable server applications.
+ *              
+ *  - Socket.io : a JavaScript library and an event-based bi-directional 
+ *                communication layer for realtime web applications, built atop 
+ *                Engine.IO.
+ *                
+ *  - Mongodb :  a cross-platform document-oriented database. Classified as a 
+ *               NoSQL database, MongoDB eschews the traditional table-based 
+ *               relational database structure in favor of JSON-like documents
+ *               
+ *  - Mongoose :  an Object Document Mapper (ODM) running on top of mongodb
+ *  
+ * Description: Server side implementation of the collatex project. This server
+ *              provide in the form of API all basic functionalities necessary
+ *              in a collaboartive editor of latex documents and their subsequent
+ *              conversion to PDF.
+ *              
+ *              List of commands:
+ *              =================
+ *              
+ *              1- connection : establish connection between server and client
+ *              2- error : error handling
+ *              3- subscribe : client subscribe to a room
+ *              4- unsubscribe : client unsuscribe from a room
+ *              5- server_roomlist : list of room currently online
+ *              6- user_online : number of online users
+ *              7- disconnect : stop connection between server and client
+ *              8- client_logout : client logout
+ *              9- client_login : client login
+ *              10- server_login : server acknowledgment from client login
+ *              11- server_useronlinelist : list of online users
+ *              12- client_register : client registration
+ *              13- server_registration : server acknowledgment from client 
+ *                  registration
+ *              14- client_character : editor content emitted by a client
+ *              15- server_character : editor content broadcasted to all clients
+ *                  except the sender
+ *              16- client_doc : saving the receive document
+ *              17- client_getdocs : request all documents owned by the user
+ *              18- server_getdocs : return all documents owned by the user
+ *              19- client_convert : request conversion of a latex document to 
+ *                  pdf
+ *              20- server_pdf : return converted document infomation
+ *              21- client_getDocContent : request a document content
+ *              22- server_getDocContent : return a document content
+ *            
+ *            Functions:
+ *            
+ *            - function checkDirectoryAndSaveFile(path,fileName, data, userpid):
+               Checking directory existing and creating/saving a new file
+ *              
+ *            - function writeToFile(path, data) : Writing data to a file
+ *            
+ *            - function createNewFile(path, name, data, userpid):
+ *               Building a path and creating a new file, then write data on it
+ *               
+ *            - function readFileContents(path): Reading file content
+ *            
+ *            - function userRegister(email, password): Persist a newly 
+ *                registered user in the database
+ *
+ *            - function docSave(name, userid): Save document and user info in 
+ *                the database
+ *
+ *            - function userAuthentication(socket, userEmail, userPassword): 
+ *                User authentication
+
+ *              
+ * History: 
+ * 
+ * Version 4.0
+ */
+
 //Imported module variables
 var express = require("express");
 var app  = express();
@@ -315,7 +392,7 @@ io.sockets.on('connection', function(socket){
 });
 };
 
-//Writing data t a file
+//Writing data to a file
 function writeToFile(path, data){
     fs.appendFile(path, data,function(err) {
     if (err) throw err;
