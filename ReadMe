@@ -1,0 +1,28 @@
+Linux
+
+1. Start mongodb :
+  sudo  service  mongodb start
+
+  open database: > mongo
+
+2. Xampp:
+   start :  sudo /opt/lampp/lampp start
+   stop :  sudo /opt/lampp/lampp stop
+
+3. Access client: 
+   http://localhost/collatexclient/public_html/
+
+4. Server:
+  if file change: 
+        chmod 777 /opt/lampp/htdocs/collatexserver
+
+  change directory:
+        cd /opt/lampp/htdocs/collatexserver/server/
+
+  start server:
+        node server.js
+
+5. Download converted document:
+  http://localhost/collatexserver/api/pdf/docrjdiih.pdf
+  
+  where docrjdiih.pdf is the desired pdf document
